@@ -46,9 +46,17 @@ namespace RedHat.OpenShift
 
     public class OpenShiftIntegrationOptions
     {
+        /// <summary>
+        /// Cert mount point on file system, ex. "/app/certificates"
+        /// </summary>
         public string CertificateMountPoint { get; set; }
 
         internal bool UseHttps => !string.IsNullOrEmpty(CertificateMountPoint);
+
+        /// <summary>
+        /// Port, defaults to 8080
+        /// </summary>
+        public int Port { get; set; } = 8080;
     }
 
     internal class KestrelOptionsSetup : IConfigureOptions<KestrelServerOptions>
@@ -66,11 +74,11 @@ namespace RedHat.OpenShift
         {
             if (_options.Value.UseHttps)
             {
-                options.ListenAnyIP(8080, configureListen => configureListen.UseHttps(_certificateLoader.ServiceCertificate));
+                options.ListenAnyIP(_options.Value.Port, configureListen => configureListen.UseHttps(_certificateLoader.ServiceCertificate));
             }
             else
             {
-                options.ListenAnyIP(8080);
+                options.ListenAnyIP(_options.Value.Port);
             }
         }
     }
@@ -280,6 +288,24 @@ namespace Microsoft.AspNetCore.Hosting
                 });
             }
             return builder;
+        }
+
+        public static IServiceCollection UseOpenShiftIntegration(this IServiceCollection services, Action<OpenShiftIntegrationOptions> configureOptions)
+        {
+            if (configureOptions == null)
+            {
+                throw new ArgumentNullException(nameof(configureOptions));
+            }
+
+            if (PlatformEnvironment.IsOpenShift)
+            {
+                services.Configure(configureOptions);
+                services.AddSingleton<OpenShiftCertificateLoader>();
+                services.AddSingleton<IConfigureOptions<KestrelServerOptions>, KestrelOptionsSetup>();
+                services.AddHostedService<OpenShiftCertificateExpiration>();
+            }
+
+            return services;
         }
     }
 }

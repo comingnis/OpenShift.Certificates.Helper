@@ -10,7 +10,12 @@
 More info: https://developers.redhat.com/blog/2018/10/12/securing-net-core-on-openshift-using-https/</Description>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Version>1.0.2</Version>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="nuget.exe" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.7" />
